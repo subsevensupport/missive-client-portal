@@ -11,7 +11,7 @@ const server = http.createServer((request, response) => {
 
   if (request.url === "/favicon.ico") {
     statusCode = 204;
-    body = "This content does not exist.";
+    body = "";
   }
   if (request.url === "/") {
     statusCode = 200;
