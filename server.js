@@ -3,16 +3,23 @@ import http from "http";
 const PORT = 3000;
 
 const server = http.createServer((request, response) => {
-  console.log("---");
-  console.log("URL:", request.url);
-  console.log("Method:", request.method);
-  console.log("Headers:", request.headers);
-  console.log("---");
-  const statusCode = 200;
-  const headers = { "Content-Type": "text/html" };
-  response
-    .writeHead(statusCode, headers)
-    .end(`<h1>Hello Clients!</h1> <p>requested: ${request.url}</p>`);
+  console.log(`${request.method} ${request.url}`);
+
+  let statusCode = 404;
+  let headers = { "Content-Type": "text/html" };
+  let body = "The requested resource was not found.";
+
+  if (request.url === "/favicon.ico") {
+    statusCode = 204;
+    body = "This content does not exist.";
+  }
+  if (request.url === "/") {
+    statusCode = 200;
+    body = "<h1>Client Portal</h1>";
+  }
+
+  console.log(`----> ${statusCode}: ${body}`);
+  response.writeHead(statusCode, headers).end(body);
 });
 
 server.listen(PORT, () => {
