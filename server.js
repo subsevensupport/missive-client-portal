@@ -5,17 +5,20 @@ const PORT = 3000;
 const server = http.createServer((request, response) => {
   console.log(`${request.method} ${request.url}`);
 
+  const headers = { "Content-Type": "text/html" };
+
   let statusCode = 404;
-  let headers = { "Content-Type": "text/html" };
   let body = "The requested resource was not found.";
 
-  if (request.url === "/favicon.ico") {
-    statusCode = 204;
-    body = "";
-  }
-  if (request.url === "/") {
-    statusCode = 200;
-    body = "<h1>Client Portal</h1>";
+  switch (request.url) {
+    case "/":
+      statusCode = 200;
+      body = "<h1>Client Portal</h1>";
+      break;
+    case "/favicon.ico":
+      statusCode = 204;
+      body = "";
+      break;
   }
 
   console.log(`----> ${statusCode}: ${body}`);
