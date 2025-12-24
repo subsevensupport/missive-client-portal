@@ -18,15 +18,12 @@ const server = http.createServer((request, response) => {
     },
   };
 
-  const headers = routes[request.url]
-    ? routes[request.url].headers
-    : { "Content-Type": "text/html" };
+  const route = routes[request.url];
+  const headers = route ? route.headers : { "Content-Type": "text/html" };
 
-  const statusCode = routes[request.url] ? routes[request.url].statusCode : 404;
+  const statusCode = route ? route.statusCode : 404;
 
-  const body = routes[request.url]
-    ? routes[request.url].body
-    : "The requested resource was not found.";
+  const body = route ? route.body : "The requested resource was not found.";
 
   console.log(`----> ${statusCode}: ${body}`);
   response.writeHead(statusCode, headers).end(body);
