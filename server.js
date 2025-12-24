@@ -8,22 +8,23 @@ const server = http.createServer((request, response) => {
   const headers = { "Content-Type": "text/html" };
 
   const routes = {
-    "/": {
+    "/": (request) => ({
       statusCode: 200,
-      body: "<h1>Client Portal</h1>",
-    },
-    "/favicon.ico": {
+      body: `<h1>Client Portal</h1><p>You requested ${request.url}</p>`,
+    }),
+    "/favicon.ico": (request) => ({
       statusCode: 204,
       body: "",
-    },
+    }),
   };
 
-  const defaultRoute = {
+  const defaultRoute = (request) => ({
     statusCode: 404,
     body: "The requested resource was not found.",
-  };
+  });
 
-  const route = routes[request.url] || defaultRoute;
+  const routeHandler = routes[request.url] || defaultRoute;
+  const route = routeHandler(request);
 
   const statusCode = route.statusCode;
   const body = route.body;
