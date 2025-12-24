@@ -5,25 +5,28 @@ const PORT = 3000;
 const server = http.createServer((request, response) => {
   console.log(`${request.method} ${request.url}`);
 
+  const headers = { "Content-Type": "text/html" };
+
   const routes = {
     "/": {
-      headers: { "Content-Type": "text/html" },
       statusCode: 200,
       body: "<h1>Client Portal</h1>",
     },
     "/favicon.ico": {
-      headers: { "Content-Type": "text/html" },
       statusCode: 204,
       body: "",
     },
   };
 
-  const route = routes[request.url];
-  const headers = route ? route.headers : { "Content-Type": "text/html" };
+  const defaultRoute = {
+    statusCode: 404,
+    body: "The requested resource was not found.",
+  };
 
-  const statusCode = route ? route.statusCode : 404;
+  const route = routes[request.url] || defaultRoute;
 
-  const body = route ? route.body : "The requested resource was not found.";
+  const statusCode = route.statusCode;
+  const body = route.body;
 
   console.log(`----> ${statusCode}: ${body}`);
   response.writeHead(statusCode, headers).end(body);
