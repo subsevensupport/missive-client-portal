@@ -1,3 +1,8 @@
 {
-  "outputStyle": "Learning"
+  "outputStyle": "Learning",
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:missiveapp.com)"
+    ]
+  }
 }
