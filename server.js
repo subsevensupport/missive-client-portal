@@ -2,35 +2,56 @@ import http from "http";
 
 const PORT = 3000;
 
-const server = http.createServer((request, response) => {
+const APIKEY = process.env.MISSIVE_API_KEY;
+
+const MISSIVE_API_URL = "https://public.missiveapp.com/v1";
+const CLIENT_LABELS = {
+  NANN: "c460058e-4c8c-4a6e-a3cf-d8b296b7091d",
+};
+
+const server = http.createServer(async (request, response) => {
   console.log(`${request.method} ${request.url}`);
 
   const headers = { "Content-Type": "text/html" };
 
   const routes = {
-    "/": (request) => ({
+    "/": () => ({
       statusCode: 200,
-      body: `<h1>Client Portal</h1><p>You requested ${request.url}</p>`,
+      body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/api/conversations">/api/conversations</a></p>`,
     }),
-    "/favicon.ico": (request) => ({
+
+    "/api/conversations": async () => {
+      const response = await fetch(
+        `${MISSIVE_API_URL}/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
+        {
+          headers: {
+            Authorization: `Bearer ${APIKEY}`,
+          },
+        },
+      );
+      const data = await response.json();
+      return {
+        statusCode: 200,
+        body: `<pre>${JSON.stringify(data["conversations"][0], null, 2)}</pre>`,
+      };
+    },
+
+    "/favicon.ico": () => ({
       statusCode: 204,
       body: "",
     }),
   };
 
-  const defaultRoute = (request) => ({
+  const defaultRoute = () => ({
     statusCode: 404,
     body: "The requested resource was not found.",
   });
 
   const routeHandler = routes[request.url] || defaultRoute;
-  const route = routeHandler(request);
+  const route = await routeHandler();
 
-  const statusCode = route.statusCode;
-  const body = route.body;
-
-  console.log(`----> ${statusCode}: ${body}`);
-  response.writeHead(statusCode, headers).end(body);
+  console.log(`----> ${route.statusCode}`);
+  response.writeHead(route.statusCode, headers).end(route.body);
 });
 
 server.listen(PORT, () => {
