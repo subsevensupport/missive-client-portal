@@ -12,11 +12,10 @@ const CLIENT_LABELS = {
 const server = http.createServer(async (request, response) => {
   console.log(`${request.method} ${request.url}`);
 
-  const headers = { "Content-Type": "text/html" };
-
   const routes = {
     "/": () => ({
       statusCode: 200,
+      headers: { "Content-Type": "text/html" },
       body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/api/conversations">/api/conversations</a></p>`,
     }),
 
@@ -32,12 +31,14 @@ const server = http.createServer(async (request, response) => {
       const data = await response.json();
       return {
         statusCode: 200,
-        body: `<pre>${JSON.stringify(data["conversations"][0], null, 2)}</pre>`,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data["conversations"][0], null, 2),
       };
     },
 
     "/favicon.ico": () => ({
       statusCode: 204,
+      headers: { "Content-Type": "text/html" },
       body: "",
     }),
   };
@@ -51,7 +52,7 @@ const server = http.createServer(async (request, response) => {
   const route = await routeHandler();
 
   console.log(`----> ${route.statusCode}`);
-  response.writeHead(route.statusCode, headers).end(route.body);
+  response.writeHead(route.statusCode, route.headers).end(route.body);
 });
 
 server.listen(PORT, () => {
