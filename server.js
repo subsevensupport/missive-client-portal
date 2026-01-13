@@ -9,7 +9,6 @@ const CLIENT_LABELS = {
   NANN: "c460058e-4c8c-4a6e-a3cf-d8b296b7091d",
 };
 
-// Helper function to call Missive API
 async function missiveFetch(endpoint) {
   const response = await fetch(`${MISSIVE_API_URL}${endpoint}`, {
     headers: {
@@ -17,6 +16,17 @@ async function missiveFetch(endpoint) {
     },
   });
   return response.json();
+}
+
+function formatDateTime(unixTimestamp) {
+  const date = new Date(unixTimestamp * 1000);
+  const dateString = date.toLocaleDateString("en-US", {
+    dateStyle: "medium",
+  });
+  const timeString = date.toLocaleTimeString("en-US", {
+    timeStyle: "short",
+  });
+  return `${dateString} at ${timeString}`;
 }
 
 const server = http.createServer(async (request, response) => {
@@ -33,27 +43,35 @@ const server = http.createServer(async (request, response) => {
       const conversationsData = await missiveFetch(
         `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
       );
-      const conversation = conversationsData.conversations[0];
 
-      const ticket = {
+      const tickets = conversationsData.conversations.map((conversation) => ({
         id: conversation.id,
-        title: conversation.subject,
+        web_url: conversation.web_url,
+        app_url: conversation.app_url,
+        title: conversation.subject || conversation.latest_message_subject,
+        team: conversation.team?.name ?? "none",
+        closed: conversation.users?.[0]?.closed ?? undefined,
         created_at: conversation.created_at,
         last_activity_at: conversation.last_activity_at,
         total_tasks: conversation.tasks_count,
         completed_tasks: conversation.completed_tasks_count,
-      };
+      }));
 
-      function formatDateTime(unixTimestamp) {
-        const date = new Date(unixTimestamp * 1000);
-        const dateString = date.toLocaleDateString("en-US", {
-          dateStyle: "medium",
-        });
-        const timeString = date.toLocaleTimeString("en-US", {
-          timeStyle: "short",
-        });
-        return `${dateString} at ${timeString}`;
-      }
+      const ticketsStr = tickets
+        .map(
+          (ticket) => `
+        <li><a href="${ticket.app_url}"><strong>${ticket.title}</strong></a>
+          <ul>
+            <li>${ticket.closed ? "closed" : "open"}</li>
+            <li>${ticket.team}</li>
+            <li>${ticket.completed_tasks} out of ${ticket.total_tasks} tasks completed</li>
+            <li>Created on ${formatDateTime(ticket.created_at)}</li>
+            <li>Last activity on ${formatDateTime(ticket.last_activity_at)}</li>
+          </ul>
+        </li>
+        `,
+        )
+        .join("");
 
       const html = `
         <!DOCTYPE html>
@@ -64,14 +82,7 @@ const server = http.createServer(async (request, response) => {
         <body>
           <h1>Your Tickets</h1>
           <ul>
-            <li>
-            <strong>${ticket.title}</strong>
-              <ul>
-                <li>${ticket.completed_tasks} out of ${ticket.total_tasks} tasks completed</li>
-                <li>Created on ${formatDateTime(ticket.created_at)}</li>
-                <li>Last activity on ${formatDateTime(ticket.last_activity_at)}</li>
-              </ul>
-            </li>
+            ${ticketsStr}
           </ul>
         </body>
         </html>
