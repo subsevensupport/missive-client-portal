@@ -29,30 +29,6 @@ const server = http.createServer(async (request, response) => {
       body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/tickets">/tickets</a></p>`,
     }),
 
-    "/api/conversations": async () => {
-      const conversationsData = await missiveFetch(
-        `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
-      );
-      const conversation = conversationsData.conversations[0];
-
-      // come back to open/closed status - may have to get it from my user on the conversation
-      // or if we can get the conversation level task
-      const ticket = {
-        id: conversation.id,
-        title: conversation.subject,
-        created_at: conversation.created_at,
-        last_activity_at: conversation.last_activity_at,
-        total_tasks: conversation.tasks_count,
-        completed_tasks: conversation.completed_tasks_count,
-      };
-
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ticket),
-      };
-    },
-
     "/tickets": async () => {
       const conversationsData = await missiveFetch(
         `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
