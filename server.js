@@ -9,6 +9,16 @@ const CLIENT_LABELS = {
   NANN: "c460058e-4c8c-4a6e-a3cf-d8b296b7091d",
 };
 
+// Helper function to call Missive API
+async function missiveFetch(endpoint) {
+  const response = await fetch(`${MISSIVE_API_URL}${endpoint}`, {
+    headers: {
+      Authorization: `Bearer ${APIKEY}`,
+    },
+  });
+  return response.json();
+}
+
 const server = http.createServer(async (request, response) => {
   console.log(`${request.method} ${request.url}`);
 
@@ -20,19 +30,28 @@ const server = http.createServer(async (request, response) => {
     }),
 
     "/api/conversations": async () => {
-      const response = await fetch(
-        `${MISSIVE_API_URL}/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
-        {
-          headers: {
-            Authorization: `Bearer ${APIKEY}`,
-          },
-        },
+      const conversationsData = await missiveFetch(
+        `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
       );
-      const data = await response.json();
+      const conversation = conversationsData.conversations[0];
+
+      // come back to open/closed status - may have to get it from my user on the conversation
+      // or if we can get the conversation level task
+      const ticket = {
+        id: conversation.id,
+        title: conversation.subject,
+        created_at: conversation.created_at,
+        last_activity_at: conversation.last_activity_at,
+        total_tasks: conversation.tasks_count,
+        completed_tasks: conversation.completed_tasks_count,
+      };
+
+      // const tasksData = await missiveFetch(`/tasks?type=conversation`);
+
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data["conversations"][0], null, 2),
+        body: JSON.stringify(ticket),
       };
     },
 
