@@ -26,7 +26,7 @@ const server = http.createServer(async (request, response) => {
     "/": () => ({
       statusCode: 200,
       headers: { "Content-Type": "text/html" },
-      body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/api/conversations">/api/conversations</a></p>`,
+      body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/tickets">/tickets</a></p>`,
     }),
 
     "/api/conversations": async () => {
@@ -46,12 +46,65 @@ const server = http.createServer(async (request, response) => {
         completed_tasks: conversation.completed_tasks_count,
       };
 
-      // const tasksData = await missiveFetch(`/tasks?type=conversation`);
-
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(ticket),
+      };
+    },
+
+    "/tickets": async () => {
+      const conversationsData = await missiveFetch(
+        `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
+      );
+      const conversation = conversationsData.conversations[0];
+
+      const ticket = {
+        id: conversation.id,
+        title: conversation.subject,
+        created_at: conversation.created_at,
+        last_activity_at: conversation.last_activity_at,
+        total_tasks: conversation.tasks_count,
+        completed_tasks: conversation.completed_tasks_count,
+      };
+
+      function formatDateTime(unixTimestamp) {
+        const date = new Date(unixTimestamp * 1000);
+        const dateString = date.toLocaleDateString("en-US", {
+          dateStyle: "medium",
+        });
+        const timeString = date.toLocaleTimeString("en-US", {
+          timeStyle: "short",
+        });
+        return `${dateString} at ${timeString}`;
+      }
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Client Portal</title>
+        </head>
+        <body>
+          <h1>Your Tickets</h1>
+          <ul>
+            <li>
+            <strong>${ticket.title}</strong>
+              <ul>
+                <li>${ticket.completed_tasks} out of ${ticket.total_tasks} tasks completed</li>
+                <li>Created on ${formatDateTime(ticket.created_at)}</li>
+                <li>Last activity on ${formatDateTime(ticket.last_activity_at)}</li>
+              </ul>
+            </li>
+          </ul>
+        </body>
+        </html>
+        `;
+
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "text/html" },
+        body: html,
       };
     },
 
