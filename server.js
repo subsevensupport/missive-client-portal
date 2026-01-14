@@ -18,15 +18,25 @@ async function missiveFetch(endpoint) {
   return response.json();
 }
 
-function formatDateTime(unixTimestamp) {
+function formatSmartDate(unixTimestamp) {
   const date = new Date(unixTimestamp * 1000);
-  const dateString = date.toLocaleDateString("en-US", {
-    dateStyle: "medium",
-  });
-  const timeString = date.toLocaleTimeString("en-US", {
-    timeStyle: "short",
-  });
-  return `${dateString} at ${timeString}`;
+  const now = new Date();
+
+  if (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDay() === now.getDay()
+  ) {
+    return date.toLocaleTimeString("en-US", { timeStyle: "short" });
+  }
+
+  if (
+    Math.floor((now.getTime() - date.getTime()) / (24 * 60 * 60 * 1000)) <= 7
+  ) {
+    return date.toLocaleDateString("en-US", { weekday: "long" });
+  }
+
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 const server = http.createServer(async (request, response) => {
@@ -68,7 +78,8 @@ const server = http.createServer(async (request, response) => {
             <span class="tasks">${ticket.completed_tasks}/${ticket.total_tasks} tasks</span>
           </div>
           <div class="ticket-dates">
-            Created on ${formatDateTime(ticket.created_at)} Last activity on ${formatDateTime(ticket.last_activity_at)}
+            <span class="created-date">Created: ${formatSmartDate(ticket.created_at)}</span>
+            <span class="activity-date">Activity: ${formatSmartDate(ticket.last_activity_at)}</span>
           </div>
         </div>
         `,
@@ -95,12 +106,15 @@ const server = http.createServer(async (request, response) => {
             }
 
             .ticket {
+              min-height: 125px;
               border: 1px solid #ddd;
               padding: 16px;
               margin-bottom: 12px;
               background: white;
               border-radius: 8px;
               box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+              display: flex;
+              flex-direction: column;
             }
 
             .ticket-title {
@@ -139,9 +153,12 @@ const server = http.createServer(async (request, response) => {
             }
 
             .ticket-dates {
-              margin-top: 8px;
+              margin-top: auto;
+              padding-top: 8px;
               font-size: 13px;
               color: #888;
+              display: flex;
+              justify-content: space-between;
             }
 
           </style>
