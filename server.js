@@ -60,15 +60,17 @@ const server = http.createServer(async (request, response) => {
       const ticketsStr = tickets
         .map(
           (ticket) => `
-        <li><a href="${ticket.app_url}"><strong>${ticket.title}</strong></a>
-          <ul>
-            <li>${ticket.closed ? "closed" : "open"}</li>
-            <li>${ticket.team}</li>
-            <li>${ticket.completed_tasks} out of ${ticket.total_tasks} tasks completed</li>
-            <li>Created on ${formatDateTime(ticket.created_at)}</li>
-            <li>Last activity on ${formatDateTime(ticket.last_activity_at)}</li>
-          </ul>
-        </li>
+        <div class="ticket">
+          <a href="${ticket.app_url}" class="ticket-title">${ticket.title}</a>
+          <div class="ticket-meta">
+            <span class="status ${ticket.closed ? "closed" : "open"}">${ticket.closed ? "Closed" : "Open"}</span>
+            <span class="team">${ticket.team}</span>
+            <span class="tasks">${ticket.completed_tasks}/${ticket.total_tasks} tasks</span>
+          </div>
+          <div class="ticket-dates">
+            Created on ${formatDateTime(ticket.created_at)} Last activity on ${formatDateTime(ticket.last_activity_at)}
+          </div>
+        </div>
         `,
         )
         .join("");
@@ -78,12 +80,77 @@ const server = http.createServer(async (request, response) => {
         <html>
         <head>
           <title>Client Portal</title>
+          <style>
+            body {
+              margin: 0 auto;
+              padding: 20px;
+              font-family: sans-serif;
+              background: #f5f5f5;
+            }
+
+            .tickets-container {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+              gap: 24px 12px;
+            }
+
+            .ticket {
+              border: 1px solid #ddd;
+              padding: 16px;
+              margin-bottom: 12px;
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .ticket-title {
+              font-size: 18px;
+              font-weight: bold;
+              text-decoration: none;
+              color: #333;
+            }
+
+            .ticket-title:hover {
+              color: #0066cc;
+            }
+
+            .ticket-meta {
+              margin-top: 8px;
+              display: flex;
+              gap: 12px;
+              color: #666;
+              font-size: 14px;
+            }
+
+            .status {
+              padding: 2px 8px;
+              border-radius: 4px;
+              font-weight: 500;
+            }
+
+            .status.open {
+              background: #e6f4ea;
+              color: #1e7e34;
+            }
+
+            .status.closed {
+              background: #f0f0f0;
+              color: #666;
+            }
+
+            .ticket-dates {
+              margin-top: 8px;
+              font-size: 13px;
+              color: #888;
+            }
+
+          </style>
         </head>
         <body>
           <h1>Your Tickets</h1>
-          <ul>
+          <div class="tickets-container">
             ${ticketsStr}
-          </ul>
+          </div>
         </body>
         </html>
         `;
