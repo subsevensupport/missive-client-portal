@@ -49,6 +49,19 @@ const server = http.createServer(async (request, response) => {
       body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/tickets">/tickets</a></p>`,
     }),
 
+    "/debug": async () => {
+      const data = await missiveFetch(
+        `/conversations/1f82c233-8c6b-4e2f-93bb-19f32167240f`,
+      );
+      const conversation = data.conversations[0];
+      const body = JSON.stringify(conversation);
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: body,
+      };
+    },
+
     "/tickets": async () => {
       const conversationsData = await missiveFetch(
         `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
