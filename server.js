@@ -94,7 +94,7 @@ const server = http.createServer(async (request, response) => {
           <a href="${ticket.app_url}" class="ticket-title">${ticket.title}</a>
 
           <div class="team">${ticket.team}</div>
-          // todo: don't show progress bar if there are no tasks
+          <!-- TODO: don't show progress bar if there are no tasks -->
           <div class="progress-container">
             <div class="progress-bar">
               <div class="progress-fill" style="width: ${Math.round((ticket.completed_tasks / ticket.total_tasks) * 100)}%"></div>
@@ -104,7 +104,7 @@ const server = http.createServer(async (request, response) => {
 
           <div class="ticket-dates">
             <span class="created-date">Created: ${formatSmartDate(ticket.created_at)}</span>
-            // to do: if the ticket is closed, show closed: closed_at instead of activity
+            <!-- TODO: if the ticket is closed, show closed: closed_at instead of activity -->
             <span class="activity-date">Activity: ${formatSmartDate(ticket.last_activity_at)}</span>
           </div>
         </div>
