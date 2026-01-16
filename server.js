@@ -25,7 +25,7 @@ function formatSmartDate(unixTimestamp) {
   if (
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
-    date.getDay() === now.getDay()
+    date.getDate() === now.getDate() // getDate() gives day of the month, getDay() gives day of week
   ) {
     return date.toLocaleTimeString("en-US", { timeStyle: "short" });
   }
