@@ -84,7 +84,7 @@ const server = http.createServer(async (request, response) => {
       const conversationsData = await missiveFetch(
         `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
       );
-      // to do: filter conversations - probably just support and projects/opportunities, and maybe only closed_at within last week?
+      // TODO: filter conversations - probably just support and projects/opportunities, and maybe only closed_at within last week?
       const tickets = conversationsData.conversations.map((conversation) => ({
         id: conversation.id,
         web_url: conversation.web_url,
@@ -99,46 +99,11 @@ const server = http.createServer(async (request, response) => {
         completed_tasks: conversation.completed_tasks_count,
       }));
 
-      const ticketsStr = tickets
-        .map(
-          (ticket) => `
-        <div class="ticket ${ticket.closed_at ? "closed" : "open"}">
-          <a href="${ticket.app_url}" class="ticket-title">${ticket.title}</a>
-
-          <div class="team">${ticket.team}</div>
-          <!-- TODO: don't show progress bar if there are no tasks -->
-          <div class="progress-container">
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: ${Math.round((ticket.completed_tasks / ticket.total_tasks) * 100)}%"></div>
-            </div>
-            <div class="tasks-count">${ticket.completed_tasks}/${ticket.total_tasks}</div>
-          </div>
-
-          <div class="ticket-dates">
-            <span class="created-date">Created: ${formatSmartDate(ticket.created_at)}</span>
-            <!-- TODO: if the ticket is closed, show closed: closed_at instead of activity -->
-            <span class="activity-date">Activity: ${formatSmartDate(ticket.last_activity_at)}</span>
-          </div>
-        </div>
-        `,
-        )
-        .join("");
-
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Client Portal</title>
-          <link rel="stylesheet" href="/styles.css">
-        </head>
-        <body>
-          <h1>Your Tickets</h1>
-          <div class="tickets-container">
-            ${ticketsStr}
-          </div>
-        </body>
-        </html>
-        `;
+      // Render the EJS template with our data
+      const html = await ejs.renderFile(
+        join(__dirname, 'views', 'pages', 'tickets.ejs'),
+        { tickets, formatSmartDate }
+      );
 
       return {
         statusCode: 200,

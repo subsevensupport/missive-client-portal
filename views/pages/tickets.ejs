@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Client Portal</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <h1>Your Tickets</h1>
+  <div class="tickets-container">
+    <% tickets.forEach(ticket => { %>
+      <%- include('../partials/ticketCard', { ticket, formatSmartDate }) %>
+    <% }) %>
+  </div>
+</body>
+</html>
