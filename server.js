@@ -66,14 +66,15 @@ const server = http.createServer(async (request, response) => {
       const conversationsData = await missiveFetch(
         `/conversations?shared_label=${CLIENT_LABELS["NANN"]}`,
       );
-
+      // to do: filter conversations - probably just support and projects/opportunities, and maybe only closed_at within last week?
       const tickets = conversationsData.conversations.map((conversation) => ({
         id: conversation.id,
         web_url: conversation.web_url,
         app_url: conversation.app_url,
         title: conversation.subject || conversation.latest_message_subject,
         team: conversation.team?.name ?? "none",
-        closed: conversation.users?.[0]?.closed ?? undefined,
+        closed_at: conversation.closed_at,
+        user_closed: conversation.users?.[0]?.closed ?? undefined,
         created_at: conversation.created_at,
         last_activity_at: conversation.last_activity_at,
         total_tasks: conversation.tasks_count,
@@ -83,15 +84,21 @@ const server = http.createServer(async (request, response) => {
       const ticketsStr = tickets
         .map(
           (ticket) => `
-        <div class="ticket">
+        <div class="ticket ${ticket.closed_at ? "closed" : "open"}">
           <a href="${ticket.app_url}" class="ticket-title">${ticket.title}</a>
-          <div class="ticket-meta">
-            <span class="status ${ticket.closed ? "closed" : "open"}">${ticket.closed ? "Closed" : "Open"}</span>
-            <span class="team">${ticket.team}</span>
-            <span class="tasks">${ticket.completed_tasks}/${ticket.total_tasks} tasks</span>
+
+          <div class="team">${ticket.team}</div>
+          // todo: don't show progress bar if there are no tasks
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${Math.round((ticket.completed_tasks / ticket.total_tasks) * 100)}%"></div>
+            </div>
+            <div class="tasks-count">${ticket.completed_tasks}/${ticket.total_tasks}</div>
           </div>
+
           <div class="ticket-dates">
             <span class="created-date">Created: ${formatSmartDate(ticket.created_at)}</span>
+            // to do: if the ticket is closed, show closed: closed_at instead of activity
             <span class="activity-date">Activity: ${formatSmartDate(ticket.last_activity_at)}</span>
           </div>
         </div>
@@ -120,7 +127,7 @@ const server = http.createServer(async (request, response) => {
 
             .ticket {
               min-height: 125px;
-              border: 1px solid #ddd;
+              border: 2px solid #ddd;
               padding: 16px;
               margin-bottom: 12px;
               background: white;
@@ -128,6 +135,11 @@ const server = http.createServer(async (request, response) => {
               box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
               display: flex;
               flex-direction: column;
+              justify-content: space-between;
+            }
+
+            .ticket.open {
+              border: 2px solid #10b981;
             }
 
             .ticket-title {
@@ -144,29 +156,32 @@ const server = http.createServer(async (request, response) => {
             .ticket-meta {
               margin-top: 8px;
               display: flex;
-              gap: 12px;
+              flex-direction: column;
+              justify-content: space-between;
               color: #666;
               font-size: 14px;
             }
 
-            .status {
-              padding: 2px 8px;
+            .progress-container {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+            }
+            .progress-bar {
+              background: #e0e0e0;
               border-radius: 4px;
-              font-weight: 500;
+              height: 6px;
+              width: 60px;
             }
 
-            .status.open {
-              background: #e6f4ea;
-              color: #1e7e34;
-            }
-
-            .status.closed {
-              background: #f0f0f0;
-              color: #666;
+            .progress-fill {
+              background: #10b981;
+              border-radius: 4px;
+              height: 100%;
             }
 
             .ticket-dates {
-              margin-top: auto;
+              // margin-top: auto;
               padding-top: 8px;
               font-size: 13px;
               color: #888;
