@@ -6,6 +6,8 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+import fs from "fs";
+
 const PORT = 3000;
 
 const APIKEY = process.env.MISSIVE_API_KEY;
@@ -54,6 +56,16 @@ const server = http.createServer(async (request, response) => {
       headers: { "Content-Type": "text/html" },
       body: `<h1>Client Portal</h1><p>Welcome! Try visiting <a href= "/tickets">/tickets</a></p>`,
     }),
+
+    "/styles.css": () => {
+      const cssPath = join(__dirname, "public", "styles.css");
+      const css = fs.readFileSync(cssPath, "utf-8");
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "text/css" },
+        body: css,
+      };
+    },
 
     "/debug": async () => {
       const data = await missiveFetch(
@@ -117,85 +129,7 @@ const server = http.createServer(async (request, response) => {
         <html>
         <head>
           <title>Client Portal</title>
-          <style>
-            body {
-              margin: 0 auto;
-              padding: 20px;
-              font-family: sans-serif;
-              background: #f5f5f5;
-            }
-
-            .tickets-container {
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-              gap: 24px 12px;
-            }
-
-            .ticket {
-              min-height: 125px;
-              border: 2px solid #ddd;
-              padding: 16px;
-              margin-bottom: 12px;
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-            }
-
-            .ticket.open {
-              border: 2px solid #10b981;
-            }
-
-            .ticket-title {
-              font-size: 18px;
-              font-weight: bold;
-              text-decoration: none;
-              color: #333;
-            }
-
-            .ticket-title:hover {
-              color: #0066cc;
-            }
-
-            .ticket-meta {
-              margin-top: 8px;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              color: #666;
-              font-size: 14px;
-            }
-
-            .progress-container {
-              display: flex;
-              align-items: center;
-              gap: 4px;
-            }
-            .progress-bar {
-              background: #e0e0e0;
-              border-radius: 4px;
-              height: 6px;
-              width: 60px;
-            }
-
-            .progress-fill {
-              background: #10b981;
-              border-radius: 4px;
-              height: 100%;
-            }
-
-            .ticket-dates {
-              // margin-top: auto;
-              padding-top: 8px;
-              font-size: 13px;
-              color: #888;
-              display: flex;
-              justify-content: space-between;
-            }
-
-          </style>
+          <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
           <h1>Your Tickets</h1>
