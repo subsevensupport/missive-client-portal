@@ -70,9 +70,10 @@ const server = http.createServer(async (request, response) => {
     "/debug": async () => {
       const data = await missiveFetch(
         `/conversations/1f82c233-8c6b-4e2f-93bb-19f32167240f`,
+        // "/contact_groups?contact_book=05ee15d9-d145-4110-a0c5-4149ae02e007&kind=organization",
+        // "/contacts?contact_book=05ee15d9-d145-4110-a0c5-4149ae02e007&search=Newtown&nbspAnner",
       );
-      const conversation = data.conversations[0];
-      const body = JSON.stringify(conversation);
+      const body = JSON.stringify(data);
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
@@ -101,8 +102,8 @@ const server = http.createServer(async (request, response) => {
 
       // Render the EJS template with our data
       const html = await ejs.renderFile(
-        join(__dirname, 'views', 'pages', 'tickets.ejs'),
-        { tickets, formatSmartDate }
+        join(__dirname, "views", "pages", "tickets.ejs"),
+        { tickets, formatSmartDate },
       );
 
       return {
