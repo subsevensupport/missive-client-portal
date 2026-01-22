@@ -143,3 +143,4 @@ screenshot.png
 *.db
 *.sqlite
 .DS_Store
+data/
