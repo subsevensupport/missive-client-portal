@@ -1,4 +1,4 @@
-const PORT = process.env.PORT || 3000;
+import { config } from './config/index.js';
 
-console.log(`Starting server on port ${PORT}...`);
-console.log('Server setup will be implemented in the next task.');
+console.log(`Starting server on port ${config.port}...`);
+console.log('Express app will be implemented in the next task.');
