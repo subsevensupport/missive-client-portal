@@ -1,24 +1,23 @@
 {
   "name": "missive-client-portal",
-  "version": "0.1.0",
-  "description": "a dashboard showing a client's threads from missive",
-  "homepage": "https://github.com/subsevensupport/missive-client-portal#readme",
-  "bugs": {
-    "url": "https://github.com/subsevensupport/missive-client-portal/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/subsevensupport/missive-client-portal.git"
-  },
-  "license": "GPL-3.0-or-later",
-  "author": "Ray",
+  "version": "1.0.0",
+  "description": "A client portal for viewing Missive support threads",
   "type": "module",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "node --watch --env-file=.env server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch --env-file=.env src/server.js",
+    "start": "node --env-file=.env src/server.js",
+    "test": "node --test"
   },
+  "author": "Ray",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
-    "ejs": "^4.0.1"
+    "better-sqlite3": "^12.6.2",
+    "ejs": "^4.0.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.19.0",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^7.0.12"
   }
 }

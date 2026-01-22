@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 # Custom
 screenshot.png
+*.db
+*.sqlite
+.DS_Store
