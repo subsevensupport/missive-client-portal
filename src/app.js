@@ -1,9 +1,9 @@
 import express from 'express';
 import session from 'express-session';
-import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from './config/index.js';
+import { authRouter } from './routes/auth.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -33,23 +33,15 @@ app.use(session({
   },
 }));
 
-// Rate limiting for auth endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
-  message: 'Too many login attempts, please try again later.',
-});
-
 // Make session data available to views
 app.use((req, res, next) => {
   res.locals.clientEmail = req.session?.clientEmail || null;
   next();
 });
 
-// Routes will be added here
+// Routes
+app.use(authRouter);
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
-
-// Export limiter for use in routes
-export { authLimiter };
