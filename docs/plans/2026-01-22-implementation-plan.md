@@ -216,12 +216,12 @@ Create `src/db/index.js`:
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { mkdirSync, readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, '../../data/portal.db');
 
 // Ensure data directory exists
-import { mkdirSync } from 'fs';
 mkdirSync(join(__dirname, '../../data'), { recursive: true });
 
 export const db = new Database(dbPath);
@@ -255,21 +255,58 @@ export function runMigrations() {
       CREATE INDEX idx_magic_tokens_hash ON magic_tokens(token_hash);
       CREATE INDEX idx_magic_tokens_email ON magic_tokens(email);
 
+      CREATE TABLE client_labels (
+        id INTEGER PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT,
+        missive_label_id TEXT UNIQUE NOT NULL,
+        active INTEGER DEFAULT 1,
+        created_at INTEGER DEFAULT (unixepoch())
+      );
+
+      CREATE INDEX idx_client_labels_code ON client_labels(code);
+
       CREATE TABLE allowed_clients (
         id INTEGER PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         name TEXT,
-        client_code TEXT NOT NULL,
+        client_label_id INTEGER NOT NULL REFERENCES client_labels(id),
         created_at INTEGER DEFAULT (unixepoch())
       );
 
       CREATE INDEX idx_allowed_clients_email ON allowed_clients(email);
-      CREATE INDEX idx_allowed_clients_code ON allowed_clients(client_code);
     `);
 
     db.prepare('INSERT INTO migrations (name) VALUES (?)').run('001_create_tables');
     console.log('Migration 001_create_tables applied');
   }
+
+  // Seed client labels from CSV if table is empty
+  const labelCount = db.prepare('SELECT COUNT(*) as count FROM client_labels').get();
+  if (labelCount.count === 0) {
+    seedClientLabelsFromCSV();
+  }
+}
+
+function seedClientLabelsFromCSV() {
+  const csvPath = join(__dirname, '../../client-labels.csv');
+  const content = readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n').slice(1); // Skip header
+
+  const insert = db.prepare(`
+    INSERT INTO client_labels (code, missive_label_id)
+    VALUES (?, ?)
+  `);
+
+  for (const line of lines) {
+    const [uuid, label] = line.split(',');
+    const match = label.match(/^Clients\/(.+)$/);
+    if (match) {
+      insert.run(match[1], uuid);
+    }
+  }
+
+  console.log(`Seeded ${lines.length - 1} client labels from CSV`);
 }
 ```
 
@@ -458,16 +495,30 @@ export const authService = {
     db.prepare('DELETE FROM magic_tokens WHERE expires_at <= ?').run(now);
   },
 
-  addAllowedClient(email, name, clientCode) {
+  addAllowedClient(email, name, clientLabelId) {
     db.prepare(`
-      INSERT OR IGNORE INTO allowed_clients (email, name, client_code)
+      INSERT OR IGNORE INTO allowed_clients (email, name, client_label_id)
       VALUES (?, ?, ?)
-    `).run(email.toLowerCase(), name, clientCode);
+    `).run(email.toLowerCase(), name, clientLabelId);
   },
 
   getClientCode(email) {
-    const row = db.prepare('SELECT client_code FROM allowed_clients WHERE email = ?').get(email.toLowerCase());
-    return row?.client_code || null;
+    const row = db.prepare(`
+      SELECT cl.code
+      FROM allowed_clients ac
+      JOIN client_labels cl ON ac.client_label_id = cl.id
+      WHERE ac.email = ? AND cl.active = 1
+    `).get(email.toLowerCase());
+    return row?.code || null;
+  },
+
+  getClientLabel(email) {
+    return db.prepare(`
+      SELECT cl.*
+      FROM allowed_clients ac
+      JOIN client_labels cl ON ac.client_label_id = cl.id
+      WHERE ac.email = ? AND cl.active = 1
+    `).get(email.toLowerCase());
   },
 
   removeAllowedClient(email) {
@@ -557,63 +608,52 @@ git commit -m "feat: add emailService for sending magic link emails"
 
 ---
 
-## Task 6: Client Labels Loader
+## Task 6: Client Labels Service
 
 **Files:**
-- Create: `src/services/clientLabels.js`
+- Create: `src/services/clientLabelsService.js`
 
-**Step 1: Create client labels loader**
+**Step 1: Create client labels service**
 
-This module loads the client-labels.csv at startup and provides a lookup from client code to Missive shared label UUID.
+This module provides database queries for client labels (seeded from CSV during migration).
 
-Create `src/services/clientLabels.js`:
+Create `src/services/clientLabelsService.js`:
 
 ```javascript
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { db } from '../db/index.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const csvPath = join(__dirname, '../../client-labels.csv');
+export const clientLabelsService = {
+  getLabelByCode(code) {
+    return db.prepare(`
+      SELECT * FROM client_labels WHERE code = ? AND active = 1
+    `).get(code);
+  },
 
-// Map of client code -> label UUID
-const clientLabels = new Map();
+  getLabelById(id) {
+    return db.prepare(`
+      SELECT * FROM client_labels WHERE id = ? AND active = 1
+    `).get(id);
+  },
 
-// Map of label UUID -> client code (reverse lookup)
-const labelToCode = new Map();
+  getMissiveLabelId(code) {
+    const row = db.prepare(`
+      SELECT missive_label_id FROM client_labels WHERE code = ? AND active = 1
+    `).get(code);
+    return row?.missive_label_id || null;
+  },
 
-function loadClientLabels() {
-  const content = readFileSync(csvPath, 'utf-8');
-  const lines = content.trim().split('\n').slice(1); // Skip header
+  getAllLabels() {
+    return db.prepare(`
+      SELECT * FROM client_labels WHERE active = 1 ORDER BY code
+    `).all();
+  },
 
-  for (const line of lines) {
-    const [uuid, label] = line.split(',');
-    // Label format is "Clients/CODE" - extract the code
-    const match = label.match(/^Clients\/(.+)$/);
-    if (match) {
-      const code = match[1];
-      clientLabels.set(code, uuid);
-      labelToCode.set(uuid, code);
-    }
-  }
-
-  console.log(`Loaded ${clientLabels.size} client labels`);
-}
-
-// Load on module import
-loadClientLabels();
-
-export function getLabelUUID(clientCode) {
-  return clientLabels.get(clientCode);
-}
-
-export function getClientCode(labelUUID) {
-  return labelToCode.get(labelUUID);
-}
-
-export function getAllClientCodes() {
-  return Array.from(clientLabels.keys()).sort();
-}
+  getAllCodes() {
+    return db.prepare(`
+      SELECT code FROM client_labels WHERE active = 1 ORDER BY code
+    `).all().map(row => row.code);
+  },
+};
 ```
 
 **Step 2: Commit**
@@ -637,7 +677,7 @@ Create `src/services/missiveService.js`:
 ```javascript
 import NodeCache from 'node-cache';
 import { config } from '../config/index.js';
-import { getLabelUUID } from './clientLabels.js';
+import { clientLabelsService } from './clientLabelsService.js';
 
 const cache = new NodeCache({ stdTTL: config.cache.ttlSeconds });
 
@@ -684,7 +724,7 @@ function extractClientVisibleMessages(messages) {
 
 export const missiveService = {
   async getConversationsForClient(clientCode, options = {}) {
-    const labelUUID = getLabelUUID(clientCode);
+    const labelUUID = clientLabelsService.getMissiveLabelId(clientCode);
     if (!labelUUID) {
       throw new Error(`Unknown client code: ${clientCode}`);
     }
@@ -1921,7 +1961,7 @@ Create `scripts/add-client.js`:
 #!/usr/bin/env node
 import { authService } from '../src/services/authService.js';
 import { runMigrations } from '../src/db/index.js';
-import { getAllClientCodes, getLabelUUID } from '../src/services/clientLabels.js';
+import { clientLabelsService } from '../src/services/clientLabelsService.js';
 
 runMigrations();
 
@@ -1930,19 +1970,20 @@ const [email, name, clientCode] = process.argv.slice(2);
 if (!email || !clientCode) {
   console.log('Usage: node scripts/add-client.js <email> <name> <client_code>');
   console.log('\nAvailable client codes:');
-  getAllClientCodes().forEach(code => console.log(`  ${code}`));
+  clientLabelsService.getAllCodes().forEach(code => console.log(`  ${code}`));
   process.exit(1);
 }
 
-// Verify client code exists
-if (!getLabelUUID(clientCode)) {
+// Verify client code exists and get its ID
+const label = clientLabelsService.getLabelByCode(clientCode);
+if (!label) {
   console.error(`Error: Unknown client code "${clientCode}"`);
   console.log('\nAvailable client codes:');
-  getAllClientCodes().forEach(code => console.log(`  ${code}`));
+  clientLabelsService.getAllCodes().forEach(code => console.log(`  ${code}`));
   process.exit(1);
 }
 
-authService.addAllowedClient(email, name, clientCode);
+authService.addAllowedClient(email, name, label.id);
 console.log(`Added client: ${email} (${name}) -> ${clientCode}`);
 ```
 
