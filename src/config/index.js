@@ -28,6 +28,7 @@ export const config = {
 
   email: {
     from: requireEnv('EMAIL_FROM'),
+    testTo: optionalEnv('TEST_EMAIL', 'test@example.com'),
   },
 
   app: {
