@@ -1,0 +1,28 @@
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="error"><%= error %></div>
+<% } else if (selectedThread) { %>
+  <div class="thread-header">
+    <h2><%= selectedThread.subject %></h2>
+    <span class="status-badge <%= selectedThread.closed ? 'closed' : 'open' %>">
+      <%= selectedThread.closed ? 'Closed' : 'Open' %>
+    </span>
+  </div>
+  <div class="messages">
+    <% if (messages.length === 0) { %>
+      <p class="no-messages">No client-visible updates for this thread.</p>
+    <% } else { %>
+      <% messages.forEach(msg => { %>
+        <div class="message">
+          <div class="message-header">
+            <span class="message-date"><%= new Date(msg.deliveredAt * 1000).toLocaleString() %></span>
+          </div>
+          <div class="message-body"><%= msg.preview %></div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+<% } else { %>
+  <div class="no-selection">
+    <p>Select a thread to view updates</p>
+  </div>
+<% } %>

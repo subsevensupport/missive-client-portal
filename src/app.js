@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from './config/index.js';
 import { authRouter } from './routes/auth.js';
+import { threadRouter } from './routes/threads.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -41,7 +42,27 @@ app.use((req, res, next) => {
 
 // Routes
 app.use(authRouter);
+app.use(threadRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).render('pages/error', {
+    title: 'Not Found',
+    message: 'The page you requested could not be found.',
+    clientEmail: req.session?.clientEmail,
+  });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).render('pages/error', {
+    title: 'Server Error',
+    message: 'Something went wrong. Please try again later.',
+    clientEmail: req.session?.clientEmail,
+  });
 });
