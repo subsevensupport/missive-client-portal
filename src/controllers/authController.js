@@ -25,8 +25,12 @@ export const authController = {
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check if client is allowed
-    if (!authService.isClientAllowed(normalizedEmail)) {
+    const isAllowed = authService.isClientAllowed(normalizedEmail);
+    console.log(`[Auth] Login attempt for: ${normalizedEmail}, allowed: ${isAllowed}`);
+
+    if (!isAllowed) {
       // Don't reveal whether email exists - always show success
+      console.log(`[Auth] Email not in allowed list - skipping email send`);
       return res.render('pages/check-email', {
         title: 'Check Your Email',
         email: normalizedEmail,
@@ -34,8 +38,10 @@ export const authController = {
     }
 
     try {
+      console.log(`[Auth] Creating token and sending magic link to: ${normalizedEmail}`);
       const token = authService.createToken(normalizedEmail);
       await emailService.sendMagicLink(normalizedEmail, token);
+      console.log(`[Auth] Magic link sent successfully to: ${normalizedEmail}`);
     } catch (error) {
       console.error('Failed to send magic link:', error);
       // Still show success to prevent email enumeration
