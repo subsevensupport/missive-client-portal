@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { db, runMigrations } from '../src/db/index.js';
 
-runMigrations();
+await runMigrations();
 
 console.log('\n=== Client Labels ===');
 const labels = db.prepare('SELECT * FROM client_labels ORDER BY code').all();

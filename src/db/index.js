@@ -15,7 +15,7 @@ export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 // Run migrations
-export function runMigrations() {
+export async function runMigrations() {
   // Create migrations table if not exists
   db.exec(`
     CREATE TABLE IF NOT EXISTS migrations (
@@ -27,7 +27,9 @@ export function runMigrations() {
 
   // Migration 001: Create tables
   const migration001 = db.prepare('SELECT 1 FROM migrations WHERE name = ?').get('001_create_tables');
-  if (!migration001) {
+  const isFirstRun = !migration001;
+
+  if (isFirstRun) {
     db.exec(`
       CREATE TABLE magic_tokens (
         id INTEGER PRIMARY KEY,
@@ -64,16 +66,19 @@ export function runMigrations() {
 
     db.prepare('INSERT INTO migrations (name) VALUES (?)').run('001_create_tables');
     console.log('Migration 001_create_tables applied');
-    console.log('\n⚠️  First-time setup detected!');
-    console.log('Please run: npm run sync-labels');
-    console.log('This will populate client labels from your Missive account.\n');
   }
 
-  // Check if client_labels table needs population
+  // Auto-sync client labels on first run or if table is empty
   const labelCount = db.prepare('SELECT COUNT(*) as count FROM client_labels').get();
   if (labelCount.count === 0) {
-    console.warn('\n⚠️  No client labels found in database.');
-    console.warn('Run: npm run sync-labels');
-    console.warn('This will fetch labels from Missive API and populate the database.\n');
+    console.log('\nSyncing client labels from Missive API...');
+    try {
+      const { syncLabelsFromMissive } = await import('../services/labelSyncService.js');
+      const stats = await syncLabelsFromMissive({ verbose: false });
+      console.log(`✓ Synced ${stats.total} client labels from Missive\n`);
+    } catch (error) {
+      console.error('✗ Failed to auto-sync labels:', error.message);
+      console.error('Please run manually: npm run sync-labels\n');
+    }
   }
 }

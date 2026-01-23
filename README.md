@@ -43,19 +43,7 @@ Required variables:
 - `EMAIL_FROM` - Sender email address
 - `APP_URL` - Your application URL (e.g., `http://localhost:3000`)
 
-### 3. Sync client labels from Missive
-
-**Important:** On first run, you must populate the database with client labels:
-
-```bash
-npm run sync-labels
-```
-
-This fetches all "Clients/*" shared labels from your Missive account and stores them in the database.
-
-You can re-run this anytime to stay in sync with Missive (e.g., when you add new client labels).
-
-### 4. Add allowed clients
+### 3. Add allowed clients
 
 Add email addresses that are allowed to log in:
 
@@ -69,7 +57,9 @@ To see available client codes:
 npm run add-client
 ```
 
-### 5. Start the server
+**Note:** On first run, client labels are automatically synced from Missive API. You can manually re-sync anytime with `npm run sync-labels` (e.g., when you add new client labels in Missive).
+
+### 4. Start the server
 
 Development mode (with auto-restart):
 

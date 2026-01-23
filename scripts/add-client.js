@@ -3,7 +3,7 @@ import { authService } from '../src/services/authService.js';
 import { runMigrations } from '../src/db/index.js';
 import { clientLabelsService } from '../src/services/clientLabelsService.js';
 
-runMigrations();
+await runMigrations();
 
 const [email, name, clientCode] = process.argv.slice(2);
 
