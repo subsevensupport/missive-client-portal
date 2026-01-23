@@ -36,22 +36,26 @@ let skipped = 0;
 
 for (let i = 0; i < lines.length; i++) {
   const line = lines[i];
+  console.log(`\nLine ${i + 1}: "${line}"`);
+
   const [uuid, label] = line.split(',');
+  console.log(`  UUID: "${uuid}"`);
+  console.log(`  Label: "${label}"`);
 
   // Only insert "Clients/CODE" format, skip "Clients" parent
-  const match = label.match(/^Clients\/(.+)$/);
+  const match = label ? label.match(/^Clients\/(.+)$/) : null;
 
   if (match) {
     const code = match[1];
     try {
       insert.run(code, uuid);
-      console.log(`✓ Inserted: ${code} -> ${uuid}`);
+      console.log(`  ✓ Inserted: ${code} -> ${uuid}`);
       inserted++;
     } catch (error) {
-      console.error(`✗ Failed to insert ${code}:`, error.message);
+      console.error(`  ✗ Failed to insert ${code}:`, error.message);
     }
   } else {
-    console.log(`- Skipped: ${label} (not in Clients/CODE format)`);
+    console.log(`  - Skipped (${label ? 'not in Clients/CODE format' : 'no label found'})`);
     skipped++;
   }
 }
