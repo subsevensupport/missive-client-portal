@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { mkdirSync, readFileSync } from 'fs';
+import { mkdirSync, readFileSync, existsSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, '../../data/portal.db');
@@ -66,15 +66,24 @@ export function runMigrations() {
     console.log('Migration 001_create_tables applied');
   }
 
-  // Seed client labels from CSV if table is empty
+  // Seed client labels from CSV if table is empty (legacy, prefer sync-labels script)
   const labelCount = db.prepare('SELECT COUNT(*) as count FROM client_labels').get();
   if (labelCount.count === 0) {
-    seedClientLabelsFromCSV();
+    try {
+      seedClientLabelsFromCSV();
+    } catch (error) {
+      console.warn('CSV seeding skipped (use "npm run sync-labels" to populate from API):', error.message);
+    }
   }
 }
 
 function seedClientLabelsFromCSV() {
   const csvPath = join(__dirname, '../../client-labels.csv');
+
+  if (!existsSync(csvPath)) {
+    throw new Error('client-labels.csv not found');
+  }
+
   const content = readFileSync(csvPath, 'utf-8');
   const lines = content.trim().split('\n').slice(1); // Skip header
 
