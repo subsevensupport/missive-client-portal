@@ -35,10 +35,10 @@ let inserted = 0;
 let skipped = 0;
 
 for (let i = 0; i < lines.length; i++) {
-  const line = lines[i];
+  const line = lines[i].trim(); // Remove any whitespace/carriage returns
   console.log(`\nLine ${i + 1}: "${line}"`);
 
-  const [uuid, label] = line.split(',');
+  const [uuid, label] = line.split(',').map(s => s.trim()); // Trim each field
   console.log(`  UUID: "${uuid}"`);
   console.log(`  Label: "${label}"`);
 

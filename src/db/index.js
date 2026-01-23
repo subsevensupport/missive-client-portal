@@ -83,13 +83,16 @@ function seedClientLabelsFromCSV() {
     VALUES (?, ?)
   `);
 
+  let inserted = 0;
   for (const line of lines) {
-    const [uuid, label] = line.split(',');
-    const match = label.match(/^Clients\/(.+)$/);
+    const trimmedLine = line.trim(); // Handle different line endings
+    const [uuid, label] = trimmedLine.split(',').map(s => s.trim());
+    const match = label ? label.match(/^Clients\/(.+)$/) : null;
     if (match) {
       insert.run(match[1], uuid);
+      inserted++;
     }
   }
 
-  console.log(`Seeded ${lines.length - 1} client labels from CSV`);
+  console.log(`Seeded ${inserted} client labels from CSV`);
 }
