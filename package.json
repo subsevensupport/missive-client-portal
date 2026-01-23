@@ -9,7 +9,8 @@
     "start": "node --env-file=.env src/server.js",
     "test": "node --test",
     "add-client": "node --env-file=.env scripts/add-client.js",
-    "test-smtp": "node --env-file=.env scripts/test-smtp.js"
+    "test-smtp": "node --env-file=.env scripts/test-smtp.js",
+    "inspect-db": "node scripts/inspect-db.js"
   },
   "author": "Ray",
   "license": "GPL-3.0-or-later",
