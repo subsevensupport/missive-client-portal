@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { mkdirSync, readFileSync, existsSync } from 'fs';
+import { mkdirSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, '../../data/portal.db');
@@ -64,44 +64,16 @@ export function runMigrations() {
 
     db.prepare('INSERT INTO migrations (name) VALUES (?)').run('001_create_tables');
     console.log('Migration 001_create_tables applied');
+    console.log('\n⚠️  First-time setup detected!');
+    console.log('Please run: npm run sync-labels');
+    console.log('This will populate client labels from your Missive account.\n');
   }
 
-  // Seed client labels from CSV if table is empty (legacy, prefer sync-labels script)
+  // Check if client_labels table needs population
   const labelCount = db.prepare('SELECT COUNT(*) as count FROM client_labels').get();
   if (labelCount.count === 0) {
-    try {
-      seedClientLabelsFromCSV();
-    } catch (error) {
-      console.warn('CSV seeding skipped (use "npm run sync-labels" to populate from API):', error.message);
-    }
+    console.warn('\n⚠️  No client labels found in database.');
+    console.warn('Run: npm run sync-labels');
+    console.warn('This will fetch labels from Missive API and populate the database.\n');
   }
-}
-
-function seedClientLabelsFromCSV() {
-  const csvPath = join(__dirname, '../../client-labels.csv');
-
-  if (!existsSync(csvPath)) {
-    throw new Error('client-labels.csv not found');
-  }
-
-  const content = readFileSync(csvPath, 'utf-8');
-  const lines = content.trim().split('\n').slice(1); // Skip header
-
-  const insert = db.prepare(`
-    INSERT INTO client_labels (code, missive_label_id)
-    VALUES (?, ?)
-  `);
-
-  let inserted = 0;
-  for (const line of lines) {
-    const trimmedLine = line.trim(); // Handle different line endings
-    const [uuid, label] = trimmedLine.split(',').map(s => s.trim());
-    const match = label ? label.match(/^Clients\/(.+)$/) : null;
-    if (match) {
-      insert.run(match[1], uuid);
-      inserted++;
-    }
-  }
-
-  console.log(`Seeded ${inserted} client labels from CSV`);
 }

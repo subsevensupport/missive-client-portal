@@ -11,7 +11,6 @@
     "add-client": "node --env-file=.env scripts/add-client.js",
     "test-smtp": "node --env-file=.env scripts/test-smtp.js",
     "inspect-db": "node scripts/inspect-db.js",
-    "reseed-labels": "node scripts/reseed-labels.js",
     "sync-labels": "node --env-file=.env scripts/sync-labels.js"
   },
   "author": "Ray",
